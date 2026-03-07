@@ -1,0 +1,1583 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>ENSIAS CTF</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&family=Inter:wght@300;400;500&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --red: #CC0000;
+    --red-bright: #FF1A1A;
+    --red-dim: #8B0000;
+    --white: #F5F5F5;
+    --black: #0A0A0A;
+    --surface: #111111;
+    --surface2: #1A1A1A;
+    --border: #2A2A2A;
+    --text-muted: #888;
+    --mono: 'Share Tech Mono', monospace;
+    --display: 'Orbitron', sans-serif;
+    --body: 'Inter', sans-serif;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--black);
+    color: var(--white);
+    font-family: var(--body);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Scanline overlay */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(0,0,0,0.03) 2px,
+      rgba(0,0,0,0.03) 4px
+    );
+    pointer-events: none;
+    z-index: 9999;
+  }
+
+  /* ===== NAV ===== */
+  nav {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 100;
+    background: rgba(10,10,10,0.95);
+    border-bottom: 1px solid var(--red-dim);
+    backdrop-filter: blur(8px);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 2rem;
+    height: 60px;
+  }
+
+  .nav-logo {
+    font-family: var(--display);
+    font-weight: 900;
+    font-size: 1.2rem;
+    letter-spacing: 0.15em;
+    color: var(--white);
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+  }
+
+  .nav-logo span { color: var(--red-bright); }
+
+  .nav-logo .bracket {
+    color: var(--red-bright);
+    font-size: 1.4rem;
+    animation: blink 1.5s step-end infinite;
+  }
+
+  @keyframes blink { 50% { opacity: 0; } }
+
+  .nav-links {
+    display: flex;
+    gap: 0.25rem;
+    list-style: none;
+  }
+
+  .nav-links a {
+    display: block;
+    padding: 0.4rem 1rem;
+    font-family: var(--mono);
+    font-size: 0.78rem;
+    letter-spacing: 0.1em;
+    color: var(--text-muted);
+    text-decoration: none;
+    border: 1px solid transparent;
+    transition: all 0.15s;
+    text-transform: uppercase;
+    cursor: pointer;
+  }
+
+  .nav-links a:hover,
+  .nav-links a.active {
+    color: var(--white);
+    border-color: var(--red-dim);
+    background: rgba(204,0,0,0.08);
+  }
+
+  .nav-links a.active { color: var(--red-bright); border-color: var(--red); }
+
+  .nav-right {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .badge-admin {
+    font-family: var(--mono);
+    font-size: 0.65rem;
+    padding: 0.2rem 0.5rem;
+    background: rgba(204,0,0,0.2);
+    border: 1px solid var(--red);
+    color: var(--red-bright);
+    letter-spacing: 0.1em;
+  }
+
+  /* ===== MAIN ===== */
+  main {
+    padding-top: 60px;
+    min-height: 100vh;
+  }
+
+  .page { display: none; }
+  .page.active { display: block; }
+
+  /* ===== HERO ===== */
+  .hero {
+    position: relative;
+    min-height: calc(100vh - 60px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    overflow: hidden;
+  }
+
+  .hero-bg {
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 80% 60% at 50% 40%, rgba(204,0,0,0.07) 0%, transparent 70%),
+      radial-gradient(ellipse 40% 40% at 20% 80%, rgba(204,0,0,0.04) 0%, transparent 60%);
+  }
+
+  /* Grid lines */
+  .hero-bg::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(204,0,0,0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(204,0,0,0.04) 1px, transparent 1px);
+    background-size: 60px 60px;
+    mask-image: radial-gradient(ellipse at center, black 30%, transparent 80%);
+  }
+
+  .hero-content {
+    position: relative;
+    z-index: 1;
+    max-width: 800px;
+    padding: 2rem;
+  }
+
+  .hero-pretitle {
+    font-family: var(--mono);
+    font-size: 0.8rem;
+    color: var(--red-bright);
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    margin-bottom: 1.5rem;
+    opacity: 0;
+    animation: fadeUp 0.6s 0.2s forwards;
+  }
+
+  .hero-title {
+    font-family: var(--display);
+    font-size: clamp(3rem, 8vw, 6rem);
+    font-weight: 900;
+    letter-spacing: 0.05em;
+    line-height: 0.95;
+    margin-bottom: 1.5rem;
+    opacity: 0;
+    animation: fadeUp 0.6s 0.4s forwards;
+  }
+
+  .hero-title .red { color: var(--red-bright); }
+
+  .hero-desc {
+    font-family: var(--mono);
+    font-size: 0.9rem;
+    color: var(--text-muted);
+    max-width: 500px;
+    margin: 0 auto 2.5rem;
+    line-height: 1.8;
+    opacity: 0;
+    animation: fadeUp 0.6s 0.6s forwards;
+  }
+
+  .hero-cta {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    flex-wrap: wrap;
+    opacity: 0;
+    animation: fadeUp 0.6s 0.8s forwards;
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .btn-primary {
+    font-family: var(--mono);
+    font-size: 0.85rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    padding: 0.9rem 2rem;
+    background: var(--red);
+    color: var(--white);
+    border: none;
+    cursor: pointer;
+    transition: all 0.15s;
+    clip-path: polygon(8px 0%, 100% 0%, calc(100% - 8px) 100%, 0% 100%);
+  }
+
+  .btn-primary:hover {
+    background: var(--red-bright);
+    transform: translateY(-1px);
+  }
+
+  .btn-outline {
+    font-family: var(--mono);
+    font-size: 0.85rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    padding: 0.9rem 2rem;
+    background: transparent;
+    color: var(--white);
+    border: 1px solid var(--border);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .btn-outline:hover {
+    border-color: var(--red);
+    color: var(--red-bright);
+  }
+
+  .hero-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2px;
+    margin-top: 5rem;
+    opacity: 0;
+    animation: fadeUp 0.6s 1s forwards;
+  }
+
+  .stat-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 1.5rem;
+    text-align: center;
+  }
+
+  .stat-number {
+    font-family: var(--display);
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--red-bright);
+    display: block;
+  }
+
+  .stat-label {
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+  }
+
+  /* ===== CHALLENGES PAGE ===== */
+  .page-header {
+    padding: 3rem 2rem 2rem;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+
+  .page-title {
+    font-family: var(--display);
+    font-size: 1.8rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+  }
+
+  .page-title span { color: var(--red-bright); }
+
+  .filter-bar {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    padding: 1.5rem 2rem;
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+
+  .filter-btn {
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 0.4rem 1rem;
+    background: transparent;
+    color: var(--text-muted);
+    border: 1px solid var(--border);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .filter-btn:hover, .filter-btn.active {
+    background: rgba(204,0,0,0.1);
+    border-color: var(--red);
+    color: var(--red-bright);
+  }
+
+  .challenges-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 2px;
+    padding: 0 2rem 3rem;
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+
+  .challenge-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 1.5rem;
+    cursor: pointer;
+    transition: all 0.15s;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .challenge-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: var(--red-dim);
+    transform: scaleX(0);
+    transition: transform 0.2s;
+    transform-origin: left;
+  }
+
+  .challenge-card:hover { border-color: var(--red-dim); background: var(--surface2); }
+  .challenge-card:hover::before { transform: scaleX(1); }
+
+  .challenge-card.solved { border-color: rgba(0,255,80,0.3); }
+  .challenge-card.solved::before { background: #00ff50; transform: scaleX(1); }
+
+  .card-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 1rem;
+  }
+
+  .card-category {
+    font-family: var(--mono);
+    font-size: 0.65rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--red-bright);
+    background: rgba(204,0,0,0.1);
+    border: 1px solid rgba(204,0,0,0.2);
+    padding: 0.2rem 0.5rem;
+  }
+
+  .card-points {
+    font-family: var(--display);
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: var(--white);
+  }
+
+  .card-points span {
+    font-family: var(--mono);
+    font-size: 0.65rem;
+    color: var(--text-muted);
+    font-weight: 400;
+  }
+
+  .card-title {
+    font-family: var(--mono);
+    font-size: 1rem;
+    font-weight: 400;
+    margin-bottom: 0.5rem;
+    color: var(--white);
+  }
+
+  .card-desc {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    line-height: 1.6;
+    margin-bottom: 1rem;
+  }
+
+  .card-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border);
+  }
+
+  .difficulty {
+    font-family: var(--mono);
+    font-size: 0.65rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 0.15rem 0.4rem;
+    border: 1px solid;
+  }
+
+  .difficulty.easy { color: #4ade80; border-color: rgba(74,222,128,0.3); }
+  .difficulty.medium { color: #facc15; border-color: rgba(250,204,21,0.3); }
+  .difficulty.hard { color: var(--red-bright); border-color: rgba(255,26,26,0.3); }
+
+  .solves-count {
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    color: var(--text-muted);
+  }
+
+  .solved-badge {
+    font-family: var(--mono);
+    font-size: 0.65rem;
+    letter-spacing: 0.1em;
+    color: #4ade80;
+    border: 1px solid rgba(74,222,128,0.4);
+    padding: 0.15rem 0.5rem;
+  }
+
+  /* ===== MODAL ===== */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.85);
+    z-index: 500;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(4px);
+  }
+
+  .modal-overlay.open { display: flex; }
+
+  .modal {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-top: 2px solid var(--red);
+    max-width: 600px;
+    width: 90%;
+    max-height: 80vh;
+    overflow-y: auto;
+    animation: slideIn 0.2s ease;
+  }
+
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateY(-20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .modal-header {
+    padding: 1.5rem;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+
+  .modal-title {
+    font-family: var(--mono);
+    font-size: 1.1rem;
+    color: var(--white);
+  }
+
+  .modal-close {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    width: 28px;
+    height: 28px;
+    cursor: pointer;
+    font-size: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: all 0.15s;
+  }
+
+  .modal-close:hover { border-color: var(--red); color: var(--red-bright); }
+
+  .modal-body { padding: 1.5rem; }
+
+  .modal-meta {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    margin-bottom: 1.5rem;
+  }
+
+  .modal-desc {
+    font-size: 0.88rem;
+    line-height: 1.8;
+    color: #ccc;
+    margin-bottom: 1.5rem;
+  }
+
+  .hint-section {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .hint-title {
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin-bottom: 0.75rem;
+  }
+
+  .hint-item {
+    font-size: 0.82rem;
+    color: #aaa;
+    padding: 0.4rem 0;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .hint-item:last-child { border-bottom: none; }
+  .hint-item::before { content: '>'; color: var(--red-bright); font-family: var(--mono); }
+
+  .flag-input-group {
+    display: flex;
+    gap: 2px;
+  }
+
+  .flag-input {
+    flex: 1;
+    background: var(--black);
+    border: 1px solid var(--border);
+    color: var(--white);
+    font-family: var(--mono);
+    font-size: 0.88rem;
+    padding: 0.8rem 1rem;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+
+  .flag-input:focus { border-color: var(--red); }
+  .flag-input::placeholder { color: var(--text-muted); }
+
+  .flag-input.correct { border-color: #4ade80; color: #4ade80; }
+  .flag-input.wrong { border-color: var(--red-bright); animation: shake 0.3s; }
+
+  @keyframes shake {
+    0%,100% { transform: translateX(0); }
+    25% { transform: translateX(-6px); }
+    75% { transform: translateX(6px); }
+  }
+
+  /* ===== SCOREBOARD ===== */
+  .scoreboard-wrap {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 0 2rem 3rem;
+  }
+
+  .scoreboard-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: var(--mono);
+    font-size: 0.85rem;
+  }
+
+  .scoreboard-table thead tr {
+    border-bottom: 2px solid var(--red-dim);
+  }
+
+  .scoreboard-table th {
+    text-align: left;
+    padding: 0.75rem 1rem;
+    color: var(--text-muted);
+    font-size: 0.7rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    font-weight: 400;
+  }
+
+  .scoreboard-table tbody tr {
+    border-bottom: 1px solid var(--border);
+    transition: background 0.1s;
+  }
+
+  .scoreboard-table tbody tr:hover { background: var(--surface2); }
+
+  .scoreboard-table td {
+    padding: 1rem;
+    color: var(--white);
+  }
+
+  .rank-cell {
+    font-family: var(--display);
+    font-size: 0.9rem;
+    color: var(--text-muted);
+  }
+
+  .rank-1 { color: #FFD700; }
+  .rank-2 { color: #C0C0C0; }
+  .rank-3 { color: #CD7F32; }
+
+  .score-cell {
+    font-family: var(--display);
+    font-size: 1rem;
+    color: var(--red-bright);
+    font-weight: 700;
+  }
+
+  .team-tag {
+    display: inline-block;
+    font-size: 0.65rem;
+    padding: 0.1rem 0.4rem;
+    background: rgba(204,0,0,0.1);
+    border: 1px solid rgba(204,0,0,0.2);
+    color: var(--red-bright);
+    margin-left: 0.5rem;
+    letter-spacing: 0.1em;
+    vertical-align: middle;
+  }
+
+  /* ===== AUTH FORMS ===== */
+  .auth-wrap {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: calc(100vh - 60px);
+    padding: 2rem;
+  }
+
+  .auth-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-top: 2px solid var(--red);
+    width: 100%;
+    max-width: 420px;
+    padding: 2.5rem;
+    animation: fadeUp 0.4s forwards;
+  }
+
+  .auth-title {
+    font-family: var(--display);
+    font-size: 1.3rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    margin-bottom: 0.4rem;
+  }
+
+  .auth-subtitle {
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    letter-spacing: 0.1em;
+    margin-bottom: 2rem;
+  }
+
+  .form-group {
+    margin-bottom: 1.25rem;
+  }
+
+  .form-label {
+    display: block;
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin-bottom: 0.4rem;
+  }
+
+  .form-input {
+    width: 100%;
+    background: var(--black);
+    border: 1px solid var(--border);
+    color: var(--white);
+    font-family: var(--mono);
+    font-size: 0.88rem;
+    padding: 0.75rem 1rem;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+
+  .form-input:focus { border-color: var(--red); }
+
+  .form-submit {
+    width: 100%;
+    margin-top: 0.5rem;
+  }
+
+  .auth-switch {
+    text-align: center;
+    margin-top: 1.5rem;
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    color: var(--text-muted);
+  }
+
+  .auth-switch a {
+    color: var(--red-bright);
+    cursor: pointer;
+    text-decoration: underline;
+  }
+
+  /* ===== NOTIFICATION ===== */
+  .notification {
+    position: fixed;
+    bottom: 2rem;
+    right: 2rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--red-bright);
+    padding: 1rem 1.5rem;
+    font-family: var(--mono);
+    font-size: 0.82rem;
+    max-width: 320px;
+    z-index: 1000;
+    transform: translateY(100px);
+    opacity: 0;
+    transition: all 0.3s;
+  }
+
+  .notification.show { transform: translateY(0); opacity: 1; }
+  .notification.success { border-left-color: #4ade80; }
+  .notification.error { border-left-color: var(--red-bright); }
+
+  /* ===== SCROLLBAR ===== */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: var(--black); }
+  ::-webkit-scrollbar-thumb { background: var(--red-dim); }
+  ::-webkit-scrollbar-thumb:hover { background: var(--red); }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-logo">
+    <span class="bracket">[</span>ENSIAS<span>CTF</span><span class="bracket">]</span>
+  </div>
+  <ul class="nav-links">
+    <li><a onclick="showPage('home')" id="nav-home" class="active">Home</a></li>
+    <li><a onclick="showPage('challenges')" id="nav-challenges">Challenges</a></li>
+    <li><a onclick="showPage('scoreboard')" id="nav-scoreboard">Scoreboard</a></li>
+    <li><a onclick="showPage('login')" id="nav-login">Login</a></li>
+    <li><a onclick="showPage('register')" id="nav-register">Register</a></li>
+  </ul>
+  <div class="nav-right">
+    <span class="badge-admin" style="display:none" id="admin-badge">ADMIN</span>
+  </div>
+</nav>
+
+<main>
+
+  <!-- HOME -->
+  <div class="page active" id="page-home">
+    <section class="hero">
+      <div class="hero-bg"></div>
+      <div class="hero-content">
+        <p class="hero-pretitle">// ECOLE NATIONALE SUPERIEURE D'INFORMATIQUE ET D'ANALYSE DES SYSTEMES</p>
+        <h1 class="hero-title">ENSIAS<br/><span class="red">CTF</span></h1>
+        <p class="hero-desc">
+          Test your skills in web exploitation, reverse engineering,<br/>
+          cryptography, forensics and more.<br/>
+          <span style="color:var(--red-bright)">root@ensias:~$</span> <span id="typed"></span>
+        </p>
+        <div class="hero-cta">
+          <button class="btn-primary" onclick="showPage('challenges')">Enter Challenges</button>
+          <button class="btn-outline" onclick="showPage('register')">Create Account</button>
+        </div>
+        <div class="hero-stats">
+          <div class="stat-box">
+            <span class="stat-number" id="stat-challenges">32</span>
+            <span class="stat-label">Challenges</span>
+          </div>
+          <div class="stat-box">
+            <span class="stat-number" id="stat-players">128</span>
+            <span class="stat-label">Players</span>
+          </div>
+          <div class="stat-box">
+            <span class="stat-number" id="stat-time">24:00:00</span>
+            <span class="stat-label">Remaining</span>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- CHALLENGES -->
+  <div class="page" id="page-challenges">
+    <div class="page-header">
+      <h2 class="page-title">Chall<span>enges</span></h2>
+      <span style="font-family:var(--mono);font-size:0.75rem;color:var(--text-muted)">32 total · 4 solved</span>
+    </div>
+    <div class="filter-bar">
+      <button class="filter-btn active" onclick="filterChallenge(this,'all')">All</button>
+      <button class="filter-btn" onclick="filterChallenge(this,'web')">Web</button>
+      <button class="filter-btn" onclick="filterChallenge(this,'crypto')">Crypto</button>
+      <button class="filter-btn" onclick="filterChallenge(this,'forensics')">Forensics</button>
+      <button class="filter-btn" onclick="filterChallenge(this,'reverse')">Reverse</button>
+      <button class="filter-btn" onclick="filterChallenge(this,'pwn')">Pwn</button>
+      <button class="filter-btn" onclick="filterChallenge(this,'misc')">Misc</button>
+    </div>
+    <div class="challenges-grid" id="challenges-grid"></div>
+  </div>
+
+  <!-- SCOREBOARD -->
+  <div class="page" id="page-scoreboard">
+    <div class="page-header">
+      <h2 class="page-title">Score<span>board</span></h2>
+      <span style="font-family:var(--mono);font-size:0.75rem;color:var(--text-muted)">Live rankings</span>
+    </div>
+    <div class="scoreboard-wrap">
+      <table class="scoreboard-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Player</th>
+            <th>Solves</th>
+            <th>Score</th>
+          </tr>
+        </thead>
+        <tbody id="scoreboard-body"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- LOGIN -->
+  <div class="page" id="page-login">
+    <div class="auth-wrap">
+      <div class="auth-box">
+        <h2 class="auth-title">Access Terminal</h2>
+        <p class="auth-subtitle">// AUTHENTICATE TO CONTINUE</p>
+        <div class="form-group">
+          <label class="form-label">Email</label>
+          <input class="form-input" type="email" placeholder="student@ensias.ma" id="login-email"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Password</label>
+          <input class="form-input" type="password" placeholder="••••••••" id="login-pass"/>
+        </div>
+        <button class="btn-primary form-submit" onclick="doLogin()">Authenticate</button>
+        <p class="auth-switch">No account? <a onclick="showPage('register')">Register here</a></p>
+      </div>
+    </div>
+  </div>
+
+  <!-- REGISTER -->
+  <div class="page" id="page-register">
+    <div class="auth-wrap">
+      <div class="auth-box">
+        <h2 class="auth-title">Join the Game</h2>
+        <p class="auth-subtitle">// CREATE YOUR ACCOUNT</p>
+        <div class="form-group">
+          <label class="form-label">Username</label>
+          <input class="form-input" type="text" placeholder="h4cker_name" id="reg-username"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Email</label>
+          <input class="form-input" type="email" placeholder="student@ensias.ma" id="reg-email"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Password</label>
+          <input class="form-input" type="password" placeholder="Min. 6 characters" id="reg-pass"/>
+        </div>
+        <button class="btn-primary form-submit" onclick="doRegister()">Create Account</button>
+        <p class="auth-switch">Already have an account? <a onclick="showPage('login')">Login here</a></p>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<!-- CHALLENGE MODAL -->
+<div class="modal-overlay" id="modal-overlay" onclick="closeModal(event)">
+  <div class="modal">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title" id="modal-title">Challenge Title</div>
+        <div style="font-family:var(--mono);font-size:0.7rem;color:var(--text-muted);margin-top:0.3rem" id="modal-author">by admin</div>
+      </div>
+      <button class="modal-close" onclick="closeModal(null)">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-meta" id="modal-meta"></div>
+      <p class="modal-desc" id="modal-desc"></p>
+      <div class="hint-section" id="hint-section"></div>
+      <div>
+        <div class="form-label" style="margin-bottom:0.5rem">Submit Flag</div>
+        <div class="flag-input-group">
+          <input class="flag-input" type="text" placeholder="ENSIAS{...}" id="flag-input"
+                 onkeydown="if(event.key==='Enter')submitFlag()"/>
+          <button class="btn-primary" style="white-space:nowrap;clip-path:none" onclick="submitFlag()">Submit</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- NOTIFICATION -->
+<div class="notification" id="notification"></div>
+
+<script>
+// =====================================================================
+// CONFIGURATION — change API_BASE to your deployed backend URL
+// =====================================================================
+const API_BASE = 'http://localhost:8080';   // local dev
+// const API_BASE = 'https://your-backend.railway.app'; // production
+
+// =====================================================================
+// AUTH STATE — stored in memory (sessionStorage for page refresh)
+// =====================================================================
+let authToken  = sessionStorage.getItem('ctf_token')  || null;
+let currentUser = JSON.parse(sessionStorage.getItem('ctf_user') || 'null');
+let solvedChallengeIds = new Set();
+let allChallenges = [];
+let currentFilter = 'all';
+let currentChallenge = null;
+let competitionEndTime = null;
+
+// =====================================================================
+// API HELPER
+// =====================================================================
+async function api(method, path, body = null) {
+  const headers = { 'Content-Type': 'application/json' };
+  if (authToken) headers['Authorization'] = `Bearer ${authToken}`;
+
+  const opts = { method, headers };
+  if (body) opts.body = JSON.stringify(body);
+
+  const res = await fetch(`${API_BASE}${path}`, opts);
+
+  // Handle empty responses (204 No Content)
+  if (res.status === 204) return null;
+
+  const data = await res.json().catch(() => ({ message: 'Unexpected server error' }));
+
+  if (!res.ok) {
+    const msg = data.message || data.error || `Error ${res.status}`;
+    throw new Error(msg);
+  }
+  return data;
+}
+
+// =====================================================================
+// SESSION HELPERS
+// =====================================================================
+function saveSession(token, user) {
+  authToken = token;
+  currentUser = user;
+  sessionStorage.setItem('ctf_token', token);
+  sessionStorage.setItem('ctf_user', JSON.stringify(user));
+  updateNavForAuth();
+}
+
+function clearSession() {
+  authToken = null;
+  currentUser = null;
+  sessionStorage.removeItem('ctf_token');
+  sessionStorage.removeItem('ctf_user');
+  solvedChallengeIds.clear();
+  updateNavForAuth();
+}
+
+function updateNavForAuth() {
+  const isLoggedIn = !!authToken;
+  const isAdmin = currentUser?.role === 'ADMIN';
+
+  document.getElementById('nav-login').style.display    = isLoggedIn ? 'none' : '';
+  document.getElementById('nav-register').style.display = isLoggedIn ? 'none' : '';
+
+  let logoutLink = document.getElementById('nav-logout');
+  if (isLoggedIn && !logoutLink) {
+    const li = document.createElement('li');
+    li.innerHTML = `<a id="nav-logout" onclick="doLogout()">Logout (${currentUser.username})</a>`;
+    document.querySelector('.nav-links').appendChild(li);
+  } else if (!isLoggedIn && logoutLink) {
+    logoutLink.parentElement.remove();
+  }
+
+  const adminBadge = document.getElementById('admin-badge');
+  adminBadge.style.display = isAdmin ? 'inline' : 'none';
+
+  // Show admin panel link
+  let adminLink = document.getElementById('nav-admin');
+  if (isAdmin && !adminLink) {
+    const li = document.createElement('li');
+    li.innerHTML = `<a id="nav-admin" onclick="showPage('admin')">Admin</a>`;
+    document.querySelector('.nav-links').insertBefore(li,
+      document.getElementById('nav-login').parentElement);
+  } else if (!isAdmin && adminLink) {
+    adminLink.parentElement.remove();
+  }
+}
+
+// =====================================================================
+// PAGE ROUTING
+// =====================================================================
+function showPage(page) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-links a').forEach(a => a.classList.remove('active'));
+
+  const pageEl = document.getElementById('page-' + page);
+  const navEl  = document.getElementById('nav-' + page);
+  if (pageEl) pageEl.classList.add('active');
+  if (navEl)  navEl.classList.add('active');
+
+  if (page === 'challenges') loadChallenges();
+  if (page === 'scoreboard') loadScoreboard();
+  if (page === 'home')       loadHomeStats();
+  if (page === 'admin')      loadAdminPanel();
+}
+
+// =====================================================================
+// HOME — live stats
+// =====================================================================
+async function loadHomeStats() {
+  try {
+    const [challenges, scoreboard, competitions] = await Promise.all([
+      api('GET', '/api/challenges'),
+      api('GET', '/api/scoreboard'),
+      api('GET', '/api/competitions'),
+    ]);
+
+    document.getElementById('stat-challenges').textContent = challenges.length;
+    document.getElementById('stat-players').textContent    = scoreboard.length;
+
+    if (competitions.length > 0 && competitions[0].endTime) {
+      competitionEndTime = new Date(competitions[0].endTime);
+    }
+  } catch (e) {
+    // silently fail on home page — stats just stay at defaults
+  }
+}
+
+function updateTimer() {
+  setInterval(() => {
+    const el = document.getElementById('stat-time');
+    if (!el) return;
+    if (!competitionEndTime) { el.textContent = '--:--:--'; return; }
+    const diff = Math.max(0, Math.floor((competitionEndTime - Date.now()) / 1000));
+    const h = String(Math.floor(diff / 3600)).padStart(2, '0');
+    const m = String(Math.floor((diff % 3600) / 60)).padStart(2, '0');
+    const s = String(diff % 60).padStart(2, '0');
+    el.textContent = `${h}:${m}:${s}`;
+  }, 1000);
+}
+
+// =====================================================================
+// CHALLENGES
+// =====================================================================
+async function loadChallenges() {
+  const grid = document.getElementById('challenges-grid');
+  grid.innerHTML = `<div style="grid-column:1/-1;font-family:var(--mono);color:var(--text-muted);padding:2rem">
+    <span style="color:var(--red-bright)">></span> Loading challenges...
+  </div>`;
+
+  try {
+    allChallenges = await api('GET', '/api/challenges');
+
+    // Load solved challenges if logged in
+    if (authToken) {
+      try {
+        const scoreboard = await api('GET', '/api/scoreboard');
+        const me = scoreboard.find(e => e.username === currentUser?.username);
+        // The scoreboard doesn't give per-challenge solved info, so we track locally
+      } catch (_) {}
+    }
+
+    updateChallengeHeader();
+    renderChallenges();
+  } catch (e) {
+    grid.innerHTML = `<div style="grid-column:1/-1;font-family:var(--mono);color:var(--red-bright);padding:2rem">
+      Error loading challenges: ${e.message}
+    </div>`;
+  }
+}
+
+function updateChallengeHeader() {
+  const header = document.querySelector('#page-challenges .page-header span');
+  if (header) header.textContent = `${allChallenges.length} total · ${solvedChallengeIds.size} solved`;
+}
+
+function filterChallenge(btn, cat) {
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  currentFilter = cat;
+  renderChallenges();
+}
+
+function renderChallenges() {
+  const grid = document.getElementById('challenges-grid');
+  const list = currentFilter === 'all'
+    ? allChallenges
+    : allChallenges.filter(c => c.category?.toLowerCase() === currentFilter);
+
+  if (list.length === 0) {
+    grid.innerHTML = `<div style="grid-column:1/-1;font-family:var(--mono);color:var(--text-muted);padding:2rem">
+      No challenges found in this category.
+    </div>`;
+    return;
+  }
+
+  grid.innerHTML = list.map(c => {
+    const solved = solvedChallengeIds.has(c.id);
+    return `
+    <div class="challenge-card ${solved ? 'solved' : ''}" onclick="openChallenge('${c.id}')">
+      <div class="card-top">
+        <span class="card-category">${c.category || 'misc'}</span>
+        <div class="card-points">${c.points}<span> pts</span></div>
+      </div>
+      <div class="card-title">${c.title}</div>
+      <div class="card-desc">${(c.description || '').substring(0, 90)}${c.description?.length > 90 ? '...' : ''}</div>
+      <div class="card-footer">
+        <span class="difficulty ${(c.difficulty||'easy').toLowerCase()}">${(c.difficulty||'EASY').toLowerCase()}</span>
+        ${solved
+          ? '<span class="solved-badge">✓ SOLVED</span>'
+          : `<span class="solves-count">0 solves</span>`}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function openChallenge(id) {
+  const c = allChallenges.find(x => x.id === id);
+  if (!c) return;
+  currentChallenge = c;
+
+  document.getElementById('modal-title').textContent = c.title;
+  document.getElementById('modal-author').textContent = `Category: ${c.category} · ${c.points} pts`;
+  document.getElementById('modal-meta').innerHTML = `
+    <span class="card-category">${c.category || 'misc'}</span>
+    <span class="difficulty ${(c.difficulty||'easy').toLowerCase()}">${(c.difficulty||'EASY').toLowerCase()}</span>
+    <span style="font-family:var(--mono);font-size:0.8rem;color:var(--red-bright)">${c.points} pts</span>
+  `;
+  document.getElementById('modal-desc').textContent = c.description || '';
+
+  // Load hints
+  const hintSection = document.getElementById('hint-section');
+  const hints = c.hints || [];
+  if (hints.length > 0) {
+    hintSection.style.display = 'block';
+    hintSection.innerHTML = `<div class="hint-title">// Hints</div>` +
+      hints.map(h => `
+        <div class="hint-item" id="hint-${h.id}">
+          ${h.cost > 0 ? `[${h.cost} pts] ` : ''}
+          <a onclick="revealHint('${h.id}')" style="cursor:pointer;color:var(--red-bright);text-decoration:underline">
+            Click to reveal
+          </a>
+        </div>`).join('');
+  } else {
+    hintSection.style.display = 'none';
+  }
+
+  const input = document.getElementById('flag-input');
+  input.value = '';
+  input.className = 'flag-input';
+  if (solvedChallengeIds.has(c.id)) {
+    input.value = 'Already solved!';
+    input.className = 'flag-input correct';
+  }
+
+  document.getElementById('modal-overlay').classList.add('open');
+}
+
+async function revealHint(hintId) {
+  if (!authToken) { showNotification('Login to reveal hints', 'error'); return; }
+  try {
+    const data = await api('GET', `/api/challenges/hints/${hintId}/reveal`);
+    const el = document.getElementById(`hint-${hintId}`);
+    if (el) el.innerHTML = `<span style="color:#ccc">> ${data.content}</span>`;
+  } catch (e) {
+    showNotification(e.message, 'error');
+  }
+}
+
+function closeModal(event) {
+  if (event === null || event.target === document.getElementById('modal-overlay')) {
+    document.getElementById('modal-overlay').classList.remove('open');
+    currentChallenge = null;
+  }
+}
+
+async function submitFlag() {
+  if (!currentChallenge) return;
+  if (!authToken) { showNotification('You must be logged in to submit flags', 'error'); return; }
+
+  const input = document.getElementById('flag-input');
+  const val = input.value.trim();
+  if (!val) return;
+
+  const btn = document.querySelector('.modal .btn-primary');
+  btn.textContent = '...';
+  btn.disabled = true;
+
+  try {
+    const res = await api('POST', '/api/submissions', {
+      challengeId: currentChallenge.id,
+      flag: val
+    });
+
+    if (res.correct) {
+      input.className = 'flag-input correct';
+      solvedChallengeIds.add(currentChallenge.id);
+      showNotification(`🚩 Correct! +${res.pointsAwarded} pts`, 'success');
+      updateChallengeHeader();
+      renderChallenges();
+      setTimeout(() => closeModal(null), 1500);
+    } else {
+      input.className = 'flag-input wrong';
+      setTimeout(() => input.className = 'flag-input', 500);
+      showNotification(res.message || '❌ Wrong flag', 'error');
+    }
+  } catch (e) {
+    showNotification(e.message, 'error');
+    input.className = 'flag-input wrong';
+    setTimeout(() => input.className = 'flag-input', 500);
+  } finally {
+    btn.textContent = 'Submit';
+    btn.disabled = false;
+  }
+}
+
+// =====================================================================
+// SCOREBOARD
+// =====================================================================
+async function loadScoreboard() {
+  const tbody = document.getElementById('scoreboard-body');
+  tbody.innerHTML = `<tr><td colspan="4" style="font-family:var(--mono);color:var(--text-muted);padding:2rem">
+    Loading...
+  </td></tr>`;
+
+  try {
+    const entries = await api('GET', '/api/scoreboard');
+    renderScoreboardData(entries);
+  } catch (e) {
+    if (e.message.includes('hidden')) {
+      tbody.innerHTML = `<tr><td colspan="4" style="font-family:var(--mono);color:var(--red-bright);padding:2rem;text-align:center">
+        🔒 Scoreboard is currently hidden by the administrator
+      </td></tr>`;
+    } else {
+      tbody.innerHTML = `<tr><td colspan="4" style="color:var(--red-bright);padding:2rem">${e.message}</td></tr>`;
+    }
+  }
+}
+
+function renderScoreboardData(entries) {
+  const tbody = document.getElementById('scoreboard-body');
+  if (!entries.length) {
+    tbody.innerHTML = `<tr><td colspan="4" style="font-family:var(--mono);color:var(--text-muted);padding:2rem">
+      No scores yet. Be the first to solve a challenge!
+    </td></tr>`;
+    return;
+  }
+  tbody.innerHTML = entries.map(e => `
+    <tr>
+      <td class="rank-cell ${e.rank <= 3 ? 'rank-' + e.rank : ''}">${
+        e.rank === 1 ? '🥇' : e.rank === 2 ? '🥈' : e.rank === 3 ? '🥉' : e.rank
+      }</td>
+      <td>
+        ${e.username}
+        ${e.teamName ? `<span class="team-tag">${e.teamName}</span>` : ''}
+      </td>
+      <td style="color:var(--text-muted)">${e.solveCount}</td>
+      <td class="score-cell">${e.totalPoints}</td>
+    </tr>`).join('');
+}
+
+// =====================================================================
+// AUTH
+// =====================================================================
+async function doLogin() {
+  const email = document.getElementById('login-email').value.trim();
+  const pass  = document.getElementById('login-pass').value;
+  if (!email || !pass) { showNotification('Please fill all fields', 'error'); return; }
+
+  const btn = document.querySelector('#page-login .btn-primary');
+  btn.textContent = 'Authenticating...';
+  btn.disabled = true;
+
+  try {
+    const res = await api('POST', '/api/auth/login', { email, password: pass });
+    saveSession(res.token, { username: res.username, role: res.role });
+    showNotification(`Welcome back, ${res.username}!`, 'success');
+    document.getElementById('login-email').value = '';
+    document.getElementById('login-pass').value = '';
+    showPage('challenges');
+  } catch (e) {
+    showNotification(e.message, 'error');
+  } finally {
+    btn.textContent = 'Authenticate';
+    btn.disabled = false;
+  }
+}
+
+async function doRegister() {
+  const username = document.getElementById('reg-username').value.trim();
+  const email    = document.getElementById('reg-email').value.trim();
+  const pass     = document.getElementById('reg-pass').value;
+  if (!username || !email || !pass) { showNotification('Please fill all fields', 'error'); return; }
+  if (pass.length < 6) { showNotification('Password must be at least 6 characters', 'error'); return; }
+
+  const btn = document.querySelector('#page-register .btn-primary');
+  btn.textContent = 'Creating account...';
+  btn.disabled = true;
+
+  try {
+    await api('POST', '/api/auth/register', { username, email, password: pass });
+    showNotification('Account created! Please log in.', 'success');
+    document.getElementById('reg-username').value = '';
+    document.getElementById('reg-email').value = '';
+    document.getElementById('reg-pass').value = '';
+    showPage('login');
+  } catch (e) {
+    showNotification(e.message, 'error');
+  } finally {
+    btn.textContent = 'Create Account';
+    btn.disabled = false;
+  }
+}
+
+async function doLogout() {
+  try { await api('POST', '/api/auth/logout'); } catch (_) {}
+  clearSession();
+  showNotification('Logged out', 'success');
+  showPage('home');
+}
+
+// =====================================================================
+// ADMIN PANEL
+// =====================================================================
+async function loadAdminPanel() {
+  if (!currentUser || currentUser.role !== 'ADMIN') {
+    showPage('home');
+    return;
+  }
+
+  const page = document.getElementById('page-admin');
+  if (!page) return;
+
+  page.innerHTML = `
+    <div class="page-header">
+      <h2 class="page-title">Admin <span>Panel</span></h2>
+    </div>
+    <div style="max-width:1000px;margin:0 auto;padding:2rem;display:grid;gap:2rem">
+
+      <!-- Scoreboard toggle -->
+      <div style="background:var(--surface);border:1px solid var(--border);padding:1.5rem">
+        <div style="font-family:var(--mono);font-size:0.7rem;color:var(--text-muted);letter-spacing:.15em;text-transform:uppercase;margin-bottom:1rem">
+          // Scoreboard Visibility
+        </div>
+        <div style="display:flex;gap:1rem;flex-wrap:wrap">
+          <button class="btn-primary" onclick="toggleScoreboard(true)" style="clip-path:none;background:#22c55e">
+            Show Scoreboard
+          </button>
+          <button class="btn-primary" onclick="toggleScoreboard(false)" style="clip-path:none;background:var(--red)">
+            Hide Scoreboard
+          </button>
+        </div>
+      </div>
+
+      <!-- Create challenge -->
+      <div style="background:var(--surface);border:1px solid var(--border);padding:1.5rem">
+        <div style="font-family:var(--mono);font-size:0.7rem;color:var(--text-muted);letter-spacing:.15em;text-transform:uppercase;margin-bottom:1rem">
+          // Create Challenge
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+          <div><label class="form-label">Title</label><input class="form-input" id="adm-title" placeholder="Challenge name"/></div>
+          <div><label class="form-label">Category</label><input class="form-input" id="adm-cat" placeholder="web / crypto / pwn..."/></div>
+          <div><label class="form-label">Difficulty</label>
+            <select class="form-input" id="adm-diff" style="cursor:pointer">
+              <option>EASY</option><option>MEDIUM</option><option>HARD</option>
+            </select>
+          </div>
+          <div><label class="form-label">Initial Points</label><input class="form-input" id="adm-pts" type="number" placeholder="500"/></div>
+          <div><label class="form-label">Minimum Points</label><input class="form-input" id="adm-minpts" type="number" placeholder="50"/></div>
+          <div><label class="form-label">Flag</label><input class="form-input" id="adm-flag" placeholder="ENSIAS{flag_here}"/></div>
+          <div style="grid-column:1/-1"><label class="form-label">Description</label>
+            <textarea class="form-input" id="adm-desc" rows="3" placeholder="Challenge description..." style="resize:vertical"></textarea>
+          </div>
+          <div style="grid-column:1/-1">
+            <label class="form-label">Hint (optional)</label>
+            <input class="form-input" id="adm-hint" placeholder="Hint text (leave blank for none)"/>
+          </div>
+        </div>
+        <button class="btn-primary" onclick="adminCreateChallenge()" style="margin-top:1rem">
+          Create Challenge
+        </button>
+      </div>
+
+      <!-- Challenge list -->
+      <div style="background:var(--surface);border:1px solid var(--border);padding:1.5rem">
+        <div style="font-family:var(--mono);font-size:0.7rem;color:var(--text-muted);letter-spacing:.15em;text-transform:uppercase;margin-bottom:1rem">
+          // Manage Challenges
+        </div>
+        <div id="admin-challenge-list">Loading...</div>
+      </div>
+    </div>`;
+
+  loadAdminChallengeList();
+}
+
+async function loadAdminChallengeList() {
+  const el = document.getElementById('admin-challenge-list');
+  try {
+    const challenges = await api('GET', '/api/challenges/all');
+    if (!challenges.length) { el.innerHTML = '<p style="font-family:var(--mono);color:var(--text-muted)">No challenges yet.</p>'; return; }
+    el.innerHTML = challenges.map(c => `
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:.75rem;border-bottom:1px solid var(--border);font-family:var(--mono);font-size:.82rem">
+        <span>
+          <span style="color:var(--red-bright)">[${c.category}]</span> ${c.title}
+          <span style="color:var(--text-muted)"> · ${c.points}pts · ${c.difficulty}</span>
+          ${!c.isActive ? '<span style="color:#facc15"> · DISABLED</span>' : ''}
+        </span>
+        <div style="display:flex;gap:.5rem">
+          <button onclick="adminToggleChallenge('${c.id}')" style="font-family:var(--mono);font-size:.7rem;padding:.3rem .6rem;background:transparent;border:1px solid var(--border);color:var(--text-muted);cursor:pointer">
+            ${c.isActive ? 'Disable' : 'Enable'}
+          </button>
+          <button onclick="adminDeleteChallenge('${c.id}')" style="font-family:var(--mono);font-size:.7rem;padding:.3rem .6rem;background:transparent;border:1px solid var(--red-dim);color:var(--red-bright);cursor:pointer">
+            Delete
+          </button>
+        </div>
+      </div>`).join('');
+  } catch (e) {
+    el.innerHTML = `<p style="color:var(--red-bright)">${e.message}</p>`;
+  }
+}
+
+async function adminCreateChallenge() {
+  const title    = document.getElementById('adm-title').value.trim();
+  const category = document.getElementById('adm-cat').value.trim();
+  const diff     = document.getElementById('adm-diff').value;
+  const pts      = parseInt(document.getElementById('adm-pts').value);
+  const minPts   = parseInt(document.getElementById('adm-minpts').value);
+  const flag     = document.getElementById('adm-flag').value.trim();
+  const desc     = document.getElementById('adm-desc').value.trim();
+  const hint     = document.getElementById('adm-hint').value.trim();
+
+  if (!title || !category || !flag || !pts || !minPts) {
+    showNotification('Fill all required fields', 'error'); return;
+  }
+
+  try {
+    const challenge = await api('POST', '/api/challenges', {
+      title, description: desc, category,
+      difficulty: diff, initialPoints: pts, minimumPoints: minPts
+    });
+
+    await api('POST', `/api/challenges/${challenge.id}/flags?flag=${encodeURIComponent(flag)}`);
+    if (hint) await api('POST', `/api/challenges/${challenge.id}/hints?content=${encodeURIComponent(hint)}&cost=0`);
+
+    showNotification(`Challenge "${title}" created!`, 'success');
+    loadAdminChallengeList();
+
+    // Clear form
+    ['adm-title','adm-cat','adm-pts','adm-minpts','adm-flag','adm-desc','adm-hint'].forEach(id => {
+      document.getElementById(id).value = '';
+    });
+  } catch (e) {
+    showNotification(e.message, 'error');
+  }
+}
+
+async function adminToggleChallenge(id) {
+  try {
+    await api('PATCH', `/api/challenges/${id}/toggle`);
+    showNotification('Challenge updated', 'success');
+    loadAdminChallengeList();
+  } catch (e) { showNotification(e.message, 'error'); }
+}
+
+async function adminDeleteChallenge(id) {
+  if (!confirm('Delete this challenge? This cannot be undone.')) return;
+  try {
+    await api('DELETE', `/api/challenges/${id}`);
+    showNotification('Challenge deleted', 'success');
+    loadAdminChallengeList();
+  } catch (e) { showNotification(e.message, 'error'); }
+}
+
+async function toggleScoreboard(visible) {
+  try {
+    const comps = await api('GET', '/api/competitions');
+    if (!comps.length) { showNotification('No active competition found', 'error'); return; }
+    const res = await api('PATCH', `/api/competitions/${comps[0].id}/scoreboard?visible=${visible}`);
+    showNotification(res.message, 'success');
+  } catch (e) { showNotification(e.message, 'error'); }
+}
+
+// =====================================================================
+// UTILS
+// =====================================================================
+function showNotification(msg, type = 'info') {
+  const el = document.getElementById('notification');
+  el.textContent = msg;
+  el.className = `notification ${type} show`;
+  setTimeout(() => el.classList.remove('show'), 3500);
+}
+
+function typeEffect() {
+  const phrases = ['./run_challenges.sh', 'cat flag.txt', 'nc ctf.ensias.ma 1337', 'python3 exploit.py'];
+  let pi = 0, ci = 0, deleting = false;
+  const el = document.getElementById('typed');
+  if (!el) return;
+  setInterval(() => {
+    const phrase = phrases[pi];
+    if (!deleting) {
+      el.textContent = phrase.substring(0, ci + 1);
+      ci++;
+      if (ci === phrase.length) deleting = true;
+    } else {
+      el.textContent = phrase.substring(0, ci - 1);
+      ci--;
+      if (ci === 0) { deleting = false; pi = (pi + 1) % phrases.length; }
+    }
+  }, 90);
+}
+
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(null); });
+
+// =====================================================================
+// INIT
+// =====================================================================
+updateNavForAuth();
+typeEffect();
+updateTimer();
+loadHomeStats();
+
+// Restore session on refresh
+if (authToken && currentUser) {
+  updateNavForAuth();
+}
+</script>
+
+<!-- Admin page (injected dynamically) -->
+<div class="page" id="page-admin"></div>
+
+</body>
+</html>
