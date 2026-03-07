@@ -24,7 +24,8 @@ public class Challenge {
     private String category;
 
     @Enumerated(EnumType.STRING)
-    private Difficulty difficulty;
+@Column(columnDefinition = "difficulty_type")
+private Difficulty difficulty;
 
     private Integer points;
     private Integer initialPoints;
