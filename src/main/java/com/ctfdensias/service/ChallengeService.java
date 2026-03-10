@@ -11,7 +11,7 @@ public interface ChallengeService {
     List<Challenge> getActiveChallenges();
     List<Challenge> getAllChallenges();
     Challenge getChallengeById(UUID id);
-    Challenge createChallenge(ChallengeRequest request);
+    Challenge createChallenge(ChallengeRequest request, String fileUrl, String fileName);
     Challenge updateChallenge(UUID id, ChallengeRequest request);
     Challenge saveChallenge(Challenge challenge);
     void deleteChallenge(UUID id);

@@ -1,0 +1,31 @@
+.scoreboard-wrap { padding: 2rem; overflow-x: auto; }
+
+.scoreboard-table {
+  width: 100%; border-collapse: collapse;
+  font-family: var(--mono); font-size: 0.85rem;
+}
+.scoreboard-table th {
+  text-align: left; padding: 0.75rem 1rem;
+  font-size: 0.65rem; letter-spacing: 0.15em; text-transform: uppercase;
+  color: var(--text-muted); border-bottom: 1px solid var(--red-dim);
+}
+.scoreboard-table td { padding: 0.75rem 1rem; border-bottom: 1px solid var(--border); }
+.scoreboard-table tr:hover td { background: var(--surface2); }
+
+.rank-cell  { font-size: 1rem; }
+.rank-1     { color: gold; }
+.rank-2     { color: silver; }
+.rank-3     { color: #cd7f32; }
+.score-cell { color: var(--red-bright); font-weight: 700; }
+
+.members-cell { font-size: 0.75rem; color: var(--text-muted); }
+
+.your-team {
+  font-family: var(--mono); font-size: 0.65rem;
+  color: var(--red-bright);
+  margin-left: 0.5rem;
+}
+
+.sb-msg {
+  font-family: var(--mono); color: var(--text-muted); padding: 2rem; text-align: center;
+}

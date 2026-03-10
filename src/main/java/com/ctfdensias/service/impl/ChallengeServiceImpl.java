@@ -49,10 +49,12 @@ public class ChallengeServiceImpl implements ChallengeService {
 
     @Override
     @Transactional
-    public Challenge createChallenge(ChallengeRequest request) {
+    public Challenge createChallenge(ChallengeRequest request, String fileUrl, String fileName) {
         Challenge challenge = new Challenge();
         mapRequestToChallenge(request, challenge);
         challenge.setPoints(request.getInitialPoints());
+        challenge.setFileUrl(fileUrl);
+        challenge.setFileName(fileName);
         return challengeRepository.save(challenge);
     }
 
@@ -81,7 +83,7 @@ public class ChallengeServiceImpl implements ChallengeService {
     public Challenge addFlag(UUID challengeId, String rawFlag) {
         Challenge challenge = getChallengeById(challengeId);
         Flag flag = new Flag();
-        flag.setRawFlag(rawFlag);   // SHA-256 hashed here
+        flag.setRawFlag(rawFlag);
         flag.setChallenge(challenge);
         flagRepository.save(flag);
         challenge.getFlags().add(flag);

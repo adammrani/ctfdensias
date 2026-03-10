@@ -18,7 +18,6 @@ public class SubmissionServiceImpl implements SubmissionService {
     private final SubmissionRepository submissionRepository;
     private final SolveRepository solveRepository;
 
-    // Default decay configuration — could be stored in DB via DynamicScoring entity
     private final DynamicScoring dynamicScoring = new DynamicScoring(0.08);
 
     public SubmissionServiceImpl(ChallengeRepository challengeRepository,
@@ -32,6 +31,11 @@ public class SubmissionServiceImpl implements SubmissionService {
     @Override
     @Transactional
     public SubmissionResponse submitFlag(SubmitFlagRequest request, User currentUser) {
+        // Block admins from solving challenges
+        if (currentUser.getRole() == Role.ADMIN) {
+            return new SubmissionResponse(null, false, "Admins cannot submit flags.", null);
+        }
+
         Challenge challenge = challengeRepository.findById(request.getChallengeId())
                 .orElseThrow(() -> new ResourceNotFoundException("Challenge not found"));
 
@@ -45,20 +49,17 @@ public class SubmissionServiceImpl implements SubmissionService {
         submission.setUser(currentUser);
         submission.setChallenge(challenge);
         submission.setSubmittedFlag(request.getFlag());
-        submission.processSubmission(); // validates flag
+        submission.processSubmission();
 
         submissionRepository.save(submission);
 
         if (Boolean.TRUE.equals(submission.getIsCorrect())) {
-            // Calculate points with dynamic decay
             int solveCount = (int) submissionRepository.countByChallengeIdAndIsCorrectTrue(challenge.getId());
             int points = dynamicScoring.calculateNewPoints(challenge, solveCount - 1);
 
-            // Apply decay to challenge's current point value for future solvers
             dynamicScoring.applyDecay(challenge, solveCount);
             challengeRepository.save(challenge);
 
-            // Record the solve
             Solve solve = new Solve();
             solve.setUser(currentUser);
             solve.setChallenge(challenge);

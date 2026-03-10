@@ -1,0 +1,173 @@
+/* ============================================================
+   ENSIAS CTF — Global Styles
+   ============================================================ */
+
+:root {
+  --red: #CC0000;
+  --red-bright: #FF1A1A;
+  --red-dim: #8B0000;
+  --white: #F5F5F5;
+  --black: #0A0A0A;
+  --surface: #111111;
+  --surface2: #1A1A1A;
+  --border: #2A2A2A;
+  --text-muted: #888;
+  --green: #22c55e;
+  --yellow: #facc15;
+  --mono: 'Share Tech Mono', monospace;
+  --display: 'Orbitron', sans-serif;
+  --body: 'Inter', sans-serif;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  background: var(--black);
+  color: var(--white);
+  font-family: var(--body);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg, transparent, transparent 2px,
+    rgba(0,0,0,0.03) 2px, rgba(0,0,0,0.03) 4px
+  );
+  pointer-events: none;
+  z-index: 9999;
+}
+
+/* ---- BUTTONS ---- */
+.btn-primary {
+  font-family: var(--mono);
+  font-size: 0.8rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  background: var(--red);
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  cursor: pointer;
+  clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 8px 100%, 0 calc(100% - 8px));
+  transition: background 0.2s;
+}
+.btn-primary:hover { background: var(--red-bright); }
+.btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.btn-outline {
+  font-family: var(--mono);
+  font-size: 0.8rem;
+  letter-spacing: 0.1em;
+  background: transparent;
+  color: var(--white);
+  border: 1px solid var(--border);
+  padding: 0.75rem 1.5rem;
+  cursor: pointer;
+  transition: border-color 0.2s, color 0.2s;
+}
+.btn-outline:hover { border-color: var(--red-bright); color: var(--red-bright); }
+
+.btn-danger {
+  font-family: var(--mono); font-size: 0.72rem; padding: 0.3rem 0.7rem;
+  background: transparent; border: 1px solid var(--red-dim); color: var(--red-bright);
+  cursor: pointer; transition: background 0.15s;
+}
+.btn-danger:hover { background: rgba(204,0,0,0.15); }
+
+.btn-sm {
+  font-family: var(--mono); font-size: 0.72rem; padding: 0.3rem 0.7rem;
+  background: transparent; border: 1px solid var(--border); color: var(--text-muted);
+  cursor: pointer; transition: all 0.15s;
+}
+.btn-sm:hover { border-color: var(--white); color: var(--white); }
+
+.btn-green {
+  font-family: var(--mono); font-size: 0.8rem; letter-spacing: 0.1em;
+  background: var(--green); color: #000; border: none; padding: 0.6rem 1.2rem;
+  cursor: pointer; transition: opacity 0.2s;
+}
+.btn-green:hover { opacity: 0.85; }
+
+/* ---- FORMS ---- */
+.form-group { margin-bottom: 1.2rem; }
+
+.form-label {
+  display: block;
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 0.5rem;
+}
+
+.form-input {
+  width: 100%;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  color: var(--white);
+  padding: 0.75rem 1rem;
+  font-family: var(--mono);
+  font-size: 0.85rem;
+  outline: none;
+  transition: border-color 0.2s;
+}
+.form-input:focus { border-color: var(--red); }
+textarea.form-input { resize: vertical; }
+select.form-input { cursor: pointer; }
+.form-submit { width: 100%; margin-top: 0.5rem; }
+
+/* ---- PAGE LAYOUT ---- */
+main { padding-top: 60px; min-height: 100vh; }
+
+.page-header {
+  padding: 3rem 2rem 1.5rem;
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: baseline;
+  justify-content: space-between;
+  flex-wrap: wrap; gap: 0.5rem;
+}
+
+.page-title {
+  font-family: var(--display);
+  font-size: clamp(1.8rem, 4vw, 2.5rem);
+  font-weight: 900;
+  letter-spacing: 0.08em;
+}
+.page-title span { color: var(--red-bright); }
+
+/* ---- NOTIFICATION ---- */
+.notification {
+  position: fixed; bottom: 2rem; right: 2rem; z-index: 1000;
+  background: var(--surface2); border: 1px solid var(--border);
+  padding: 0.9rem 1.4rem;
+  font-family: var(--mono); font-size: 0.8rem;
+  transform: translateY(100px); opacity: 0;
+  transition: transform 0.3s, opacity 0.3s;
+  max-width: 360px;
+}
+.notification.show { transform: translateY(0); opacity: 1; }
+.notification.success { border-color: var(--green); color: var(--green); }
+.notification.error { border-color: var(--red-bright); color: var(--red-bright); }
+
+/* ---- TABS ---- */
+.tab-bar { display: flex; border-bottom: 1px solid var(--border); margin-bottom: 1.5rem; }
+.tab-btn {
+  font-family: var(--mono); font-size: 0.72rem; letter-spacing: 0.1em; text-transform: uppercase;
+  padding: 0.6rem 1.2rem; background: transparent; border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--text-muted); cursor: pointer; transition: all 0.2s;
+}
+.tab-btn:hover { color: var(--white); }
+.tab-btn.active { color: var(--red-bright); border-bottom-color: var(--red-bright); }
+
+@keyframes blink { 50% { opacity: 0; } }
+@keyframes shake {
+  0%,100%{transform:translateX(0)}
+  25%{transform:translateX(-5px)}
+  75%{transform:translateX(5px)}
+}

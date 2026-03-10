@@ -1,0 +1,52 @@
+.admin-content { max-width: 1100px; margin: 0 auto; padding: 2rem; display: grid; gap: 2rem; }
+
+.admin-section {
+  background: var(--surface); border: 1px solid var(--border); padding: 1.5rem;
+}
+
+.admin-section-title {
+  font-family: var(--mono); font-size: 0.7rem; color: var(--text-muted);
+  letter-spacing: 0.15em; text-transform: uppercase; margin-bottom: 1.25rem;
+  padding-bottom: 0.75rem; border-bottom: 1px solid var(--border);
+}
+
+.admin-form-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;
+}
+.admin-form-grid .full { grid-column: 1 / -1; }
+
+.admin-row {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 0.75rem; border-bottom: 1px solid var(--border);
+  font-family: var(--mono); font-size: 0.82rem;
+}
+.admin-row:last-child { border-bottom: none; }
+.admin-row.ticket-row { flex-direction: column; align-items: flex-start; gap: 0.5rem; }
+
+.admin-actions { display: flex; gap: 0.5rem; }
+
+/* Scoreboard mini-table */
+.scoreboard-table {
+  width: 100%; border-collapse: collapse;
+  font-family: var(--mono); font-size: 0.82rem; margin-top: 1rem;
+}
+.scoreboard-table th {
+  text-align: left; padding: 0.6rem 0.75rem;
+  font-size: 0.65rem; letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--text-muted); border-bottom: 1px solid var(--red-dim);
+}
+.scoreboard-table td { padding: 0.6rem 0.75rem; border-bottom: 1px solid var(--border); }
+
+/* Ticket status badge */
+.ticket-status {
+  font-family: var(--mono); font-size: 0.65rem; letter-spacing: 0.1em;
+  padding: 0.2rem 0.5rem; border: 1px solid; white-space: nowrap;
+}
+.ticket-status.open   { color: var(--yellow); border-color: var(--yellow); }
+.ticket-status.closed { color: var(--green);  border-color: var(--green);  }
+
+/* Competition info */
+.comp-info {
+  font-family: var(--mono); font-size: 0.85rem; line-height: 2; color: #ccc;
+}
+.comp-info .val { color: var(--white); }

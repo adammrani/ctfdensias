@@ -15,6 +15,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @RestController
@@ -43,25 +44,39 @@ public class TeamController {
     }
 
     @PostMapping
-    @Operation(summary = "Create a new team")
+    @Operation(summary = "Create a new team (authenticated user becomes first member)")
     public ResponseEntity<Team> createTeam(@Valid @RequestBody TeamRequest request,
-                                            @AuthenticationPrincipal User currentUser) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(teamService.createTeam(request, currentUser));
+                                           @AuthenticationPrincipal User currentUser) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(teamService.createTeam(request, currentUser));
+    }
+
+    @PostMapping("/join")
+    @Operation(summary = "Join an existing team by name + password")
+    public ResponseEntity<Team> joinTeam(@RequestBody Map<String, String> body,
+                                         @AuthenticationPrincipal User currentUser) {
+        String name     = body.get("name");
+        String password = body.get("password");
+        if (name == null || password == null) {
+            return ResponseEntity.badRequest().build();
+        }
+        return ResponseEntity.ok(teamService.joinTeam(name, password, currentUser));
     }
 
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Update a team (Admin only)")
     public ResponseEntity<Team> updateTeam(@PathVariable UUID id,
-                                            @Valid @RequestBody TeamRequest request,
-                                            @AuthenticationPrincipal User admin) {
+                                           @Valid @RequestBody TeamRequest request,
+                                           @AuthenticationPrincipal User admin) {
         return ResponseEntity.ok(teamService.updateTeam(admin, id, request));
     }
 
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Delete a team (Admin only)")
-    public ResponseEntity<Void> deleteTeam(@PathVariable UUID id, @AuthenticationPrincipal User admin) {
+    public ResponseEntity<Void> deleteTeam(@PathVariable UUID id,
+                                           @AuthenticationPrincipal User admin) {
         teamService.deleteTeam(admin, id);
         return ResponseEntity.noContent().build();
     }

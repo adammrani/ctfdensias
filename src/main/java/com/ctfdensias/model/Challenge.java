@@ -24,12 +24,15 @@ public class Challenge {
     private String category;
 
     @Enumerated(EnumType.STRING)
-@Column(columnDefinition = "difficulty_type")
-private Difficulty difficulty;
+    @Column(columnDefinition = "difficulty_type")
+    private Difficulty difficulty;
 
     private Integer points;
     private Integer initialPoints;
     private Integer minimumPoints;
+
+    private String fileUrl;
+    private String fileName;
 
     @Column(nullable = false)
     private Boolean isActive = true;
@@ -41,7 +44,6 @@ private Difficulty difficulty;
     @JoinColumn(name = "competition_id")
     private Competition competition;
 
-    /** Flags are hidden from API responses — admins manage them separately */
     @JsonIgnore
     @OneToMany(mappedBy = "challenge", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Flag> flags = new ArrayList<>();
@@ -59,11 +61,6 @@ private Difficulty difficulty;
 
     public Challenge() {}
 
-    // -------------------------------------------------------
-    // Domain methods
-    // -------------------------------------------------------
-
-    /** Validates submitted flag using SHA-256 comparison */
     public Boolean validateFlag(String input) {
         if (input == null || flags.isEmpty()) return false;
         return flags.stream().anyMatch(f -> f.matches(input));
@@ -92,6 +89,10 @@ private Difficulty difficulty;
     public void setInitialPoints(Integer initialPoints) { this.initialPoints = initialPoints; }
     public Integer getMinimumPoints() { return minimumPoints; }
     public void setMinimumPoints(Integer minimumPoints) { this.minimumPoints = minimumPoints; }
+    public String getFileUrl() { return fileUrl; }
+    public void setFileUrl(String fileUrl) { this.fileUrl = fileUrl; }
+    public String getFileName() { return fileName; }
+    public void setFileName(String fileName) { this.fileName = fileName; }
     public Boolean getIsActive() { return isActive; }
     public void setIsActive(Boolean active) { isActive = active; }
     public LocalDateTime getCreatedAt() { return createdAt; }

@@ -4,10 +4,11 @@ import com.ctfdensias.dto.response.ScoreboardEntry;
 import com.ctfdensias.exception.AccessDeniedException;
 import com.ctfdensias.model.Competition;
 import com.ctfdensias.model.Solve;
+import com.ctfdensias.model.Team;
 import com.ctfdensias.model.User;
 import com.ctfdensias.repository.CompetitionRepository;
 import com.ctfdensias.repository.SolveRepository;
-import com.ctfdensias.repository.UserRepository;
+import com.ctfdensias.repository.TeamRepository;
 import com.ctfdensias.service.ScoreboardService;
 import org.springframework.stereotype.Service;
 
@@ -18,20 +19,19 @@ import java.util.stream.Collectors;
 public class ScoreboardServiceImpl implements ScoreboardService {
 
     private final SolveRepository solveRepository;
-    private final UserRepository userRepository;
+    private final TeamRepository teamRepository;
     private final CompetitionRepository competitionRepository;
 
     public ScoreboardServiceImpl(SolveRepository solveRepository,
-                                  UserRepository userRepository,
-                                  CompetitionRepository competitionRepository) {
+                                 TeamRepository teamRepository,
+                                 CompetitionRepository competitionRepository) {
         this.solveRepository = solveRepository;
-        this.userRepository = userRepository;
+        this.teamRepository = teamRepository;
         this.competitionRepository = competitionRepository;
     }
 
     @Override
     public List<ScoreboardEntry> getScoreboard() {
-        // Check if scoreboard is visible (based on active competition)
         List<Competition> active = competitionRepository.findByIsActiveTrue();
         if (!active.isEmpty() && !Boolean.TRUE.equals(active.get(0).getIsScoreboardVisible())) {
             throw new AccessDeniedException("Scoreboard is currently hidden by the administrator");
@@ -41,20 +41,50 @@ public class ScoreboardServiceImpl implements ScoreboardService {
 
     @Override
     public List<ScoreboardEntry> getScoreboardAdmin() {
-        // Admin always sees scoreboard regardless of visibility setting
         return buildScoreboard();
     }
 
     private List<ScoreboardEntry> buildScoreboard() {
-        Map<UUID, List<Solve>> solvesByUser = solveRepository.findAll().stream()
-                .collect(Collectors.groupingBy(s -> s.getUser().getId()));
+        List<Solve> allSolves = solveRepository.findAll();
 
-        List<ScoreboardEntry> entries = userRepository.findAll().stream().map(user -> {
-            List<Solve> userSolves = solvesByUser.getOrDefault(user.getId(), List.of());
-            int total = userSolves.stream()
-                    .mapToInt(s -> s.getAwardedPoints() != null ? s.getAwardedPoints() : 0).sum();
-            String teamName = user.getTeam() != null ? user.getTeam().getName() : null;
-            return new ScoreboardEntry(0, user.getUsername(), teamName, total, userSolves.size());
+        Map<UUID, List<Solve>> solvesByTeam = new HashMap<>();
+        Map<UUID, Team> teamsById = new HashMap<>();
+
+        for (Solve solve : allSolves) {
+            User user = solve.getUser();
+            Team team = user != null ? user.getTeam() : null;
+            if (team == null) continue;
+            teamsById.put(team.getId(), team);
+            solvesByTeam.computeIfAbsent(team.getId(), k -> new ArrayList<>()).add(solve);
+        }
+
+        for (Team team : teamRepository.findAll()) {
+            if (!teamsById.containsKey(team.getId())) {
+                teamsById.put(team.getId(), team);
+                solvesByTeam.put(team.getId(), Collections.emptyList());
+            }
+        }
+
+        List<ScoreboardEntry> entries = teamsById.values().stream().map(team -> {
+            List<Solve> teamSolves = solvesByTeam.getOrDefault(team.getId(), List.of());
+
+            Set<UUID> uniqueChallengeIds = teamSolves.stream()
+                    .map(s -> s.getChallenge().getId())
+                    .collect(Collectors.toSet());
+
+            int totalPoints = teamSolves.stream()
+                    .collect(Collectors.groupingBy(s -> s.getChallenge().getId(),
+                             Collectors.minBy(Comparator.comparing(Solve::getSolvedAt))))
+                    .values().stream()
+                    .mapToInt(opt -> opt.map(s -> s.getAwardedPoints() != null ? s.getAwardedPoints() : 0).orElse(0))
+                    .sum();
+
+            List<String> memberNames = team.getMembers().stream()
+                    .map(User::getUsername)
+                    .collect(Collectors.toList());
+
+            return new ScoreboardEntry(0, team.getName(), memberNames,
+                    totalPoints, uniqueChallengeIds.size());
         }).collect(Collectors.toList());
 
         entries.sort(Comparator.comparingInt(ScoreboardEntry::getTotalPoints).reversed());

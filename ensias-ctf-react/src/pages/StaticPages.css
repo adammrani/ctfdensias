@@ -1,0 +1,43 @@
+.page-subtitle { font-family: var(--mono); font-size: 0.75rem; color: var(--text-muted); }
+
+.static-content { max-width: 800px; margin: 0 auto; padding: 2rem; }
+
+.static-section { margin-bottom: 2.5rem; }
+
+.static-section h3 {
+  font-family: var(--mono); font-size: 0.7rem; letter-spacing: 0.2em;
+  color: var(--red-bright); text-transform: uppercase; margin-bottom: 1rem;
+  padding-bottom: 0.5rem; border-bottom: 1px solid var(--red-dim);
+}
+
+.static-section p  { font-size: 0.9rem; color: #ccc; line-height: 1.8; margin-bottom: 0.75rem; }
+.static-section strong { color: var(--white); }
+
+.static-section ul { list-style: none; }
+.static-section ul li { font-size: 0.9rem; color: #ccc; line-height: 1.8; margin-bottom: 0.5rem; }
+.static-section ul li::before { content: '> '; color: var(--red-bright); font-family: var(--mono); }
+
+.static-section code {
+  color: var(--red-bright); font-family: var(--mono); font-size: 0.85rem;
+}
+
+.scoring-formula {
+  background: var(--surface); border: 1px solid var(--border);
+  padding: 1.5rem; font-family: var(--mono); font-size: 0.85rem;
+  color: var(--green); margin: 1rem 0; line-height: 2;
+}
+
+/* About grid */
+.about-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem; margin-top: 1rem;
+}
+
+.about-card {
+  background: var(--surface); border: 1px solid var(--border);
+  padding: 1.5rem; text-align: center;
+}
+.about-icon { font-size: 2rem; margin-bottom: 0.75rem; }
+.about-card h4 { font-family: var(--mono); font-size: 0.8rem; color: var(--white); margin-bottom: 0.4rem; }
+.about-card p  { font-size: 0.78rem; color: var(--text-muted); }

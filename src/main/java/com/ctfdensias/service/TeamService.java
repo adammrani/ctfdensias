@@ -11,6 +11,7 @@ public interface TeamService {
     List<Team> getAllTeams(User admin);
     Team getTeamById(UUID id);
     Team createTeam(TeamRequest request, User creator);
+    Team joinTeam(String teamName, String password, User user);
     Team updateTeam(User admin, UUID teamId, TeamRequest request);
     void deleteTeam(User admin, UUID teamId);
     Team addMember(UUID teamId, UUID userId);

@@ -53,8 +53,8 @@ public class ChallengeController {
     @SecurityRequirement(name = "bearerAuth")
     @Operation(summary = "Create challenge (Admin)")
     public ResponseEntity<Challenge> create(@Valid @RequestBody ChallengeRequest request) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(challengeService.createChallenge(request));
-    }
+        return ResponseEntity.status(HttpStatus.CREATED).body(challengeService.createChallenge(request,null, null));
+    }   
 
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
